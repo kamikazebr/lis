@@ -40,6 +40,8 @@ services:
       WHATSAPP_WEBHOOK: "http://backend:3010/webhook/whatsapp"
       WHATSAPP_WEBHOOK_SECRET: "${GOWA_WEBHOOK_SECRET}"
       WHATSAPP_WEBHOOK_EVENTS: "message"
+    volumes:
+      - gowa-data:/app/storages
 
   # Optional web UI for browsing/editing the Postgres DB during development.
   # Enable with: docker compose --profile db-ui up -d
@@ -58,3 +60,4 @@ services:
 
 volumes:
   pgdata:
+  gowa-data:
