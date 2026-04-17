@@ -96,10 +96,14 @@ public sealed class ConversationService(
 		if (message.MediaType is not null)
 			await this.ProcessMediaAsync(db, message, ct);
 
-		try {
-			await channelClient.MarkReadAsync(message.ExternalId, message.ChatId, ct);
-		} catch (Exception ex) {
-			logger.LogWarning(ex, "Failed to mark message as read");
+		// Skip mark-as-read for disabled chats (e.g. unsolicited DMs from strangers)
+		// so the sender doesn't see the blue ticks and deduce a bot is processing.
+		if (chat.Enabled) {
+			try {
+				await channelClient.MarkReadAsync(message.ExternalId, message.ChatId, ct);
+			} catch (Exception ex) {
+				logger.LogWarning(ex, "Failed to mark message as read");
+			}
 		}
 
 		// Full auth: mention detection + gate check (single entry point)
