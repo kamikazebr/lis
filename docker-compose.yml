@@ -41,5 +41,20 @@ services:
       WHATSAPP_WEBHOOK_SECRET: "${GOWA_WEBHOOK_SECRET}"
       WHATSAPP_WEBHOOK_EVENTS: "message"
 
+  # Optional web UI for browsing/editing the Postgres DB during development.
+  # Enable with: docker compose --profile db-ui up -d
+  # Then open http://localhost:8081
+  pgweb:
+    container_name: pgweb
+    image: sosedoff/pgweb:latest
+    restart: unless-stopped
+    profiles: ["db-ui"]
+    ports:
+      - "8081:8081"
+    environment:
+      PGWEB_DATABASE_URL: "postgres://lis:${POSTGRES_PASSWORD}@postgres:5432/lis?sslmode=disable"
+    depends_on:
+      - postgres
+
 volumes:
   pgdata:
