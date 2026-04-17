@@ -26,19 +26,37 @@ public static class AgentSetup {
 			// builder.Plugins.AddFromType<T>() would resolve from the kernel's internal provider,
 			// which shadows IServiceScopeFactory with its own built-in implementation.
 			// Short pluginName keeps tool names compact (e.g. "dt_get_current_datetime").
-			kernel.Plugins.AddFromType<DateTimePlugin>(pluginName: "dt", serviceProvider: sp);
-			kernel.Plugins.AddFromType<PromptPlugin>(pluginName: "prompt", serviceProvider: sp);
-			kernel.Plugins.AddFromType<MemoryPlugin>(pluginName: "mem", serviceProvider: sp);
-			kernel.Plugins.AddFromType<ConfigPlugin>(pluginName: "cfg", serviceProvider: sp);
-			kernel.Plugins.AddFromType<ResponsePlugin>(pluginName: "resp", serviceProvider: sp);
-			kernel.Plugins.AddFromType<ExecPlugin>(pluginName: "exec", serviceProvider: sp);
-			kernel.Plugins.AddFromType<FileSystemPlugin>(pluginName: "fs", serviceProvider: sp);
-			kernel.Plugins.AddFromType<WebPlugin>(pluginName: "web", serviceProvider: sp);
-			kernel.Plugins.AddFromType<BrowserPlugin>(pluginName: "browser", serviceProvider: sp);
+			// We also build an explicit pluginName → CLR Type map so ToolAuthRegistry can read
+			// [ToolAuthorization] attributes directly off the plugin classes (SK's KernelFunction
+			// wrappers don't expose the underlying MethodInfo reliably across versions — the
+			// previous reflection-based approach silently degraded every tool to Open).
+			Dictionary<string, Type> pluginTypes = new();
+			void Add<T>(string name) where T : class {
+				kernel.Plugins.AddFromType<T>(pluginName: name, serviceProvider: sp);
+				pluginTypes[name] = typeof(T);
+			}
 
-			// Build auth registry from plugin metadata
+			Add<DateTimePlugin>("dt");
+			Add<PromptPlugin>("prompt");
+			Add<MemoryPlugin>("mem");
+			Add<ConfigPlugin>("cfg");
+			Add<ResponsePlugin>("resp");
+			Add<ExecPlugin>("exec");
+			Add<FileSystemPlugin>("fs");
+			Add<WebPlugin>("web");
+			Add<BrowserPlugin>("browser");
+
+			// Build auth registry from the explicit plugin type map (deterministic)
 			ToolAuthRegistry authRegistry = sp.GetRequiredService<ToolAuthRegistry>();
-			authRegistry.Build(kernel);
+			authRegistry.Build(pluginTypes);
+
+			ILogger logger = loggerFactory.CreateLogger("ToolAuth");
+			if (logger.IsEnabled(LogLevel.Information)) {
+				foreach ((string plugin, string func, var level) in authRegistry.Entries()) {
+					if (level != Core.Util.ToolAuthLevel.Open)
+						logger.LogInformation("Tool auth: {Plugin}.{Func} = {Level}", plugin, func, level);
+				}
+			}
 
 			return kernel;
 		});

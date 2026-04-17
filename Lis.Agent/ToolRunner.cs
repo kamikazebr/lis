@@ -131,7 +131,7 @@ public sealed class ToolRunner(ToolAuthRegistry authRegistry, IApprovalService a
 						? cwdObj?.ToString()
 						: null;
 
-					ApprovalRequest approvalRequest = new(command, cwd, 0, ToolContext.AgentId);
+					ApprovalRequest approvalRequest = new(command, cwd, ToolContext.ChatDbId ?? 0, ToolContext.AgentId);
 					ApprovalResult  approvalResult  = await approvalService.RequestApprovalAsync(approvalRequest, ct);
 
 					if (approvalResult.Decision is ApprovalDecision.Deny or ApprovalDecision.Timeout) {
