@@ -20,7 +20,7 @@ services:
 
   postgres:
     container_name: backend-postgres
-    image: postgres:17-alpine
+    image: pgvector/pgvector:pg17
     restart: always
     environment:
       POSTGRES_DB: lis
@@ -31,7 +31,7 @@ services:
 
   gowa:
     container_name: gowa
-    image: aldinokemal/go-whatsapp-web-multidevice:latest
+    image: aldinokemal2104/go-whatsapp-web-multidevice:v8.3.3
     restart: unless-stopped
     ports:
       - "3000:3000"
