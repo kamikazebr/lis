@@ -90,13 +90,18 @@ if (Env("ANTHROPIC_ENABLED") == "true") builder.Services.AddAnthropic();
 if (Env("OPENAI_API_KEY") is { Length: > 0 }) builder.Services.AddOpenAiTranscription();
 
 // Compaction client (keyed IChatClient for summarization — falls back to main)
+// Only take the dedicated branch when BOTH provider AND key are set. Passing an empty
+// key to AnthropicClient results in an empty x-api-key header, which Anthropic rejects.
+// Also, the dedicated branch bypasses the Bearer/OAuth handlers in AnthropicProvider,
+// so it wouldn't work with sk-ant-oat* tokens anyway — reusing the main client covers
+// both the plain-API-key and the OAuth setups correctly.
 if (Env("LIS_COMPACTION_PROVIDER") is { Length: > 0 } compProvider
-    && compProvider.Equals("anthropic", StringComparison.OrdinalIgnoreCase)) {
-	string compApiKey = Env("LIS_COMPACTION_API_KEY");
+    && compProvider.Equals("anthropic", StringComparison.OrdinalIgnoreCase)
+    && Env("LIS_COMPACTION_API_KEY") is { Length: > 0 } compApiKey) {
 	Anthropic.SDK.AnthropicClient compClient = new(compApiKey);
 	builder.Services.AddKeyedSingleton<IChatClient>("compaction", compClient.Messages);
 } else {
-	// Reuse main client for compaction
+	// Reuse main client for compaction (with all its auth handlers intact)
 	builder.Services.AddKeyedSingleton<IChatClient>("compaction",
 		(sp, _) => sp.GetRequiredService<IChatClient>());
 }
