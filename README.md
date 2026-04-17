@@ -280,6 +280,7 @@ OPENAI_API_KEY=sk-...                    # enables Whisper transcription
 
 | Doc | Topic |
 |-----|-------|
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Production deployment (Caddy + managed Postgres, two-stack compose) |
 | [AGENTS.md](docs/AGENTS.md) | Multi-agent system, per-chat config, agent switching |
 | [CONTEXT_COMPACTION.md](docs/CONTEXT_COMPACTION.md) | Rolling compaction, sessions, token tracking, prompt caching |
 | [SECURITY_MODEL.md](docs/SECURITY_MODEL.md) | 5-layer defense, tool auth, workspace sandbox |
