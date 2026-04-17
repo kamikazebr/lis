@@ -70,6 +70,15 @@ public sealed class MessageDebouncer(
 				if (state.ActiveCts is { } activeCts) await activeCts.CancelAsync();
 				CancelPendingDebounce(state);
 			}
+			// /approve and /deny must run immediately even while responding —
+			// otherwise we deadlock: the active response is blocked on an
+			// approval whose resolver is stuck in the queue.
+			else if (commandRouter.Match(message.Body) is { Command: ApproveCommand or DenyCommand }) {
+				_ = Task.Run(async () => {
+					try { await this.ExecuteCommandAsync(message); }
+					catch (Exception ex) { logger.LogError(ex, "Error executing queued approval command for {MessageId}", message.ExternalId); }
+				}, CancellationToken.None);
+			}
 			return;
 		}
 
